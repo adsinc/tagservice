@@ -10,4 +10,4 @@ libraryDependencies ++= Seq(
   "com.twitter" %% "finagle-thrift" % "6.34.0"
 )
 
-unmanagedSourceDirectories in Compile += baseDirectory.value / "target" / "scala-2.11" / "src_managed"
+//unmanagedSourceDirectories in Compile += baseDirectory.value / "target" / "scala-2.11" / "src_managed"
