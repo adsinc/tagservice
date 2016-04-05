@@ -1,6 +1,6 @@
-package server
+package tagservice.server
 
-import com.twitter.finagle._
+import com.twitter.finagle.Thrift
 import com.twitter.util.Await
 import tagservice.service.TagServiceHandler
 
