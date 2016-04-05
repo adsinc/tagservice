@@ -1,4 +1,4 @@
-package tagservice.client
+package tagservice.main
 
 import com.twitter.finagle.Thrift
 import com.twitter.util.Await
