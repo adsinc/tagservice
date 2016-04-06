@@ -76,20 +76,20 @@ class DataBase {
     }
   }
 
-  private def createData[T](data: T, table: mutable.Map[Long, T]): Future[Long] = Future.value {
+  def createRecord(record: Record): Future[Long] = Future {
     val id = idGen.incrementAndGet()
-    table(id) = data
+    records(id) = record.copy(id = id)
     id
   }
-
-  def createRecord(record: Record): Future[Long] = createData(record, records)
 
   def createTag(tag: Tag): Future[Long] = {
     val trimmedName = tag.name.trim
     if(tags.values.exists(_.name == trimmedName))
       Future.exception(TagServiceException(s"Tag with name ${tag.name} already exists"))
-    else {
-      createData(tag.copy(name = trimmedName), tags)
+    else Future {
+      val id = idGen.incrementAndGet()
+      tags(id) = Tag(id, trimmedName)
+      id
     }
   }
 }
