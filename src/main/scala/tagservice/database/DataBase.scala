@@ -6,12 +6,11 @@ import com.twitter.util.Future
 import tagservice.service.{Record, Tag, TagServiceException}
 
 import scala.collection.mutable
-import scala.collection.concurrent.TrieMap
 
 class DataBase {
-  private val tags = TrieMap[Long, Tag]()
-  private val records = TrieMap[Long, Record]()
-  private val recordsToTags = TrieMap[Long, Set[Long]]()
+  private val tags = mutable.Map[Long, Tag]()
+  private val records = mutable.Map[Long, Record]()
+  private val recordsToTags = mutable.Map[Long, Set[Long]]()
   private val idGen = new AtomicLong()
 
   def getRecordById(recordId: Long): Future[Record] = records.get(recordId) match {
@@ -26,24 +25,28 @@ class DataBase {
 
   def addTagToRecord(recordId: Long, tagId: Long) = {
     getRecordById(recordId) join getTagById(tagId) flatMap { _ =>
-      val tagIds = getRecordTags(recordId)
-      if(tagIds(tagId))
-        Future.exception(TagServiceException("Tag already added"))
-      else {
-        recordsToTags(recordId) = tagIds + tagId
-        Future.Unit
+      synchronized {
+        val tagIds = getRecordTags(recordId)
+        if (tagIds(tagId))
+          Future.exception(TagServiceException("Tag already added"))
+        else {
+          recordsToTags(recordId) = tagIds + tagId
+          Future.Unit
+        }
       }
     }
   }
 
   def deleteTagFromRecord(recordId: Long, tagId: Long): Future[Unit] = {
     getRecordById(recordId) join getTagById(tagId) flatMap { _ =>
-      val tagIds = getRecordTags(recordId)
-      if(!tagIds(tagId))
-        Future.exception(TagServiceException("Tag not added"))
-      else {
-        recordsToTags(recordId) = tagIds - tagId
-        Future.Unit
+      synchronized {
+        val tagIds = getRecordTags(recordId)
+        if (!tagIds(tagId))
+          Future.exception(TagServiceException("Tag not added"))
+        else {
+          recordsToTags(recordId) = tagIds - tagId
+          Future.Unit
+        }
       }
     }
   }
