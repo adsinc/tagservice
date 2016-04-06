@@ -16,24 +16,41 @@ class ServerTest extends FlatSpec with BeforeAndAfterAll with Matchers {
     client = Thrift.newIface[TagService.FutureIface](DefaultServerAddress)
   }
 
-  override protected def afterAll(): Unit = Closable.close(server)
+  override protected def afterAll(): Unit = Await.result(Closable.close(server))
 
-  "Create record" should "return unique id for new records" in {
+  "Method createRecord" should "return unique id for new records" in {
     testGenerate(generateRecords())
   }
 
-  "Create tag" should "return unique id for new tags" in {
+  "Method createTag" should "return unique id for new tags" in {
     testGenerate(generateTags())
   }
 
   it should "check arguments" in {
+    //todo
     val ids = generateRecords()
+  }
+
+  "Method addTag" should "" in {
+    //todo
+  }
+
+  "Method deleteTag" should "" in {
+    //todo
+  }
+
+  "Method getTags" should "" in {
+    //todo
+  }
+
+  "Method getRecords" should "" in {
+    //todo
   }
 
   def testGenerate[T](ids: => Seq[Long]) = ids.length shouldBe ids.distinct.length
 
   def generate[T](gegFn: Int => Future[T]): Seq[Long] = Await.result(Future.collect(
-    1 to 100 map (i => client.createRecord(Record(-1, "record" + i)))
+    1 to 1000 map (i => client.createRecord(Record(-1, "record" + i)))
   ))
 
   def generateRecords(): Seq[Long] = generate(n => client.createRecord(Record(-1, "record" + n)))
