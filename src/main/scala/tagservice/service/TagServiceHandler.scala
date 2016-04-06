@@ -1,44 +1,57 @@
 package tagservice.service
 
+import java.util.concurrent.atomic.AtomicLong
+
 import com.twitter.util.Future
 
-import scala.collection.mutable
+import scala.collection._
+import scala.collection.concurrent.TrieMap
 
 class TagServiceHandler extends TagService.FutureIface {
-  val tags = mutable.Map[Long, Tag]()
-  val records = mutable.Map[Long, Record]()
-  val recordsToTags = mutable.Map[Long, Set[Long]]()
+  val tags = TrieMap[Long, Tag]()
+  val records = TrieMap[Long, Record]()
+  val recordsToTags = TrieMap[Long, Set[Long]]()
+  val idGen = new AtomicLong()
 
-  override def addTag(record: Record, tag: Tag): Future[Unit] = Future {
-    //todo check args ???
-    val tagId = tag.id
-    val recId = record.id
-    if (!records.contains(recId) && tags.contains(tagId)) {
-      //todo validation
+  override def addTag(recordId: Long, tagId: Long): Future[Unit] = Future {
+    if (!records.contains(recordId) && tags.contains(tagId)) {
       ???
     }
-    val currentTags = recordsToTags(recId)
+    val currentTags = recordsToTags(recordId)
     if(currentTags.contains(tagId)) {
       ???
     }
-    recordsToTags += recId -> (currentTags + tag.id)
+    recordsToTags(recordId) = currentTags + tagId
   }
 
-  override def getRecords(tags: Seq[Tag]): Future[Seq[Record]] = Future {
-    val tagIds = tags.map(_.id).toSet
-    (for {
+  override def deleteTag(recordId: Long, tagId: Long): Future[Unit] = Future {
+    recordsToTags += recordId -> (recordsToTags(recordId) - tagId)
+  }
+
+  override def getTags(recordId: Long): Future[Seq[Tag]] = Future {
+    val tagIds = recordsToTags(recordId)
+    tags.filterKeys(tagIds.contains).values.toSeq
+  }
+
+  override def getRecords(tagIds: Seq[Long]): Future[Seq[Record]] = Future {
+    {for {
       (recId, regTagIds) <- recordsToTags
       tagId <- regTagIds
       if tagIds.contains(tagId)
-    } yield records(recId)).toSeq
+    } yield records(recId)}.toSeq
   }
 
-  override def deleteTag(record: Record, tag: Tag): Future[Unit] = Future {
-    recordsToTags += record.id -> (recordsToTags(record.id) - tag.id)
+  override def createTag(tag: Tag): Future[Long] = Future {
+    //todo
+    val id = idGen.incrementAndGet()
+    tags(id) = tag
+    id
   }
 
-  override def getTags(record: Record): Future[Seq[Tag]] = Future {
-    val tagIds = recordsToTags(record.id)
-    tags.filterKeys(tagIds.contains).values.toSeq
+  override def createRecord(record: Record): Future[Long] = Future {
+    //todo
+    val id = idGen.incrementAndGet()
+    records(id) = record
+    id
   }
 }
