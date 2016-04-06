@@ -2,20 +2,21 @@ package tagservice.main
 
 import com.twitter.finagle.{ListeningServer, Thrift}
 import com.twitter.util.{Await, Closable, Future}
-import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import tagservice.configuration.Configuration.DefaultServerAddress
 import tagservice.service.TagService.FutureIface
 import tagservice.service.{Record, Tag, TagService}
 
-class ServerTest extends FlatSpec with BeforeAndAfterEach with Matchers {
+class ServerTest extends FlatSpec with BeforeAndAfterAll with Matchers {
   var server: ListeningServer = _
   var client: FutureIface = _
 
-  override protected def beforeEach(): Unit = {
-    server = Server.start()
-    client = Thrift.newIface[TagService.FutureIface](":8080")
+  override protected def beforeAll(): Unit = {
+    server = Server.start(DefaultServerAddress)
+    client = Thrift.newIface[TagService.FutureIface](DefaultServerAddress)
   }
 
-  override protected def afterEach(): Unit = Closable.close(server)
+  override protected def afterAll(): Unit = Closable.close(server)
 
   "Create record" should "return unique id for new records" in {
     testGenerate(generateRecords())
@@ -32,7 +33,7 @@ class ServerTest extends FlatSpec with BeforeAndAfterEach with Matchers {
   def testGenerate[T](ids: => Seq[Long]) = ids.length shouldBe ids.distinct.length
 
   def generate[T](gegFn: Int => Future[T]): Seq[Long] = Await.result(Future.collect(
-    1 to 10000 map (i => client.createRecord(Record(-1, "record" + i)))
+    1 to 100 map (i => client.createRecord(Record(-1, "record" + i)))
   ))
 
   def generateRecords(): Seq[Long] = generate(n => client.createRecord(Record(-1, "record" + n)))

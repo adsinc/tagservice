@@ -93,3 +93,7 @@ class DataBase {
     }
   }
 }
+
+object DataBase {
+  def apply(): DataBase = new DataBase()
+}
