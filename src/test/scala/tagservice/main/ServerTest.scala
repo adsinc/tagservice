@@ -54,7 +54,7 @@ class ServerTest extends FlatSpec with BeforeAndAfterEach with Matchers {
     val tagsAfterDel = Await.result(client.deleteTag(recordId, tags.head.id) flatMap { _ =>
       client.getTags(recordId)
     })
-    tagsAfterDel shouldBe tags.tail
+    tagsAfterDel.sortBy(_.id) shouldBe tags.tail.sortBy(_.id)
   }
 
   it should "throw exception if tag or record not exists" in {
@@ -73,7 +73,7 @@ class ServerTest extends FlatSpec with BeforeAndAfterEach with Matchers {
     val Seq(recordId) = generateRecords(1)
     val tagIds = generateTags(10)
     val addedTags = addTagsToRecordAndGet(recordId, tagIds)
-    Await.result(client.getTags(recordId)) shouldBe addedTags
+    Await.result(client.getTags(recordId)).sortBy(_.id) shouldBe addedTags.sortBy(_.id)
   }
 
   it should "throw exception if record not exists" in {
@@ -92,7 +92,7 @@ class ServerTest extends FlatSpec with BeforeAndAfterEach with Matchers {
     addTagsToRecordAndGet(recId2, tagIds drop 2)
     getRecords(tagIds take 2) shouldBe Seq(recId1)
     getRecords(tagIds drop 3) shouldBe Seq(recId2)
-    getRecords(tagIds.slice(2, 3)) shouldBe Seq(recId1, recId2)
+    getRecords(tagIds.slice(2, 3)).sorted shouldBe Seq(recId1, recId2).sorted
   }
 
   it should "throw exception if some tag not exists" in {
