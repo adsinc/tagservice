@@ -83,7 +83,16 @@ class ServerTest extends FlatSpec with BeforeAndAfterEach with Matchers {
   }
 
   "Method getRecords" should "get records by tags" in {
+    def getRecords(tagIds: Seq[Long]) =
+      Await.result(client.getRecords(tagIds take 2)).map(_.id)
 
+    val Seq(recId1, recId2) = generateRecords(2)
+    val tagIds = generateTags(5)
+    addTagsToRecordAndGet(recId1, tagIds take 3)
+    addTagsToRecordAndGet(recId2, tagIds drop 2)
+    getRecords(tagIds take 2) shouldBe Seq(recId1)
+    getRecords(tagIds drop 3) shouldBe Seq(recId2)
+    getRecords(tagIds.slice(2, 3)) shouldBe Seq(recId1, recId2)
   }
 
   it should "throw exception if some tag not exists" in {
