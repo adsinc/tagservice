@@ -69,12 +69,33 @@ class ServerTest extends FlatSpec with BeforeAndAfterEach with Matchers {
     }
   }
 
-  "Method getTags" should "" in {
-    //todo
+  "Method getTags" should "get tags assigned to record" in {
+    val Seq(recordId) = generateRecords(1)
+    val tagIds = generateTags(10)
+    val addedTags = addTagsToRecordAndGet(recordId, tagIds)
+    Await.result(client.getTags(recordId)) shouldBe addedTags
   }
 
-  "Method getRecords" should "" in {
-    //todo
+  it should "throw exception if record not exists" in {
+    a[TagServiceException] shouldBe thrownBy {
+      Await.result(client.getTags(-1))
+    }
+  }
+
+  "Method getRecords" should "get records by tags" in {
+
+  }
+
+  it should "throw exception if some tag not exists" in {
+    val tagIds = generateTags(10)
+    val Seq(recordId) = generateRecords(1)
+    addTagsToRecordAndGet(recordId, tagIds)
+    a[TagServiceException] shouldBe thrownBy {
+      Await.result(client.getRecords(tagIds :+ (-1L)))
+    }
+    a[TagServiceException] shouldBe thrownBy {
+      Await.result(client.getRecords(Seq(-1L)))
+    }
   }
 
   def addTagsToRecordAndGet(recordId: Long, tagIds: Seq[Long]) = Await.result {
