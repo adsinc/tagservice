@@ -39,30 +39,26 @@ class ServerTest extends FlatSpec with BeforeAndAfterEach with Matchers {
   "Method addTag" should "add tag to record" in {
     val Seq(recordId) = generateRecords(1)
     val tagIds = generateTags(10)
-    val checks = Future.collect(tagIds map (client.addTag(recordId, _))) flatMap { _ =>
-      client.getTags(recordId)
-    }
-    val ids = Await.result(checks).map(_.id)
+    val ids = addTagsToRecordAndGet(recordId, tagIds).map(_.id)
     ids.sorted shouldBe tagIds.sorted
   }
 
   it should "throw exception if tag or record not exists" in {
-    val Seq(existTag) = generateTags(1)
-    val Seq(existRecord) = generateRecords(1)
-    val fakeId = -1L
-    a[TagServiceException] shouldBe thrownBy {
-      Await.result(client.addTag(fakeId, existTag))
-    }
-    a[TagServiceException] shouldBe thrownBy {
-      Await.result(client.addTag(existRecord, fakeId))
-    }
-    a[TagServiceException] shouldBe thrownBy {
-      Await.result(client.addTag(fakeId, fakeId))
-    }
+    testExceptionWithFakeId(client.addTag)
   }
 
   "Method deleteTag" should "delete tag from record" in {
-    //todo
+    val Seq(recordId) = generateRecords(1)
+    val tagIds = generateTags(10)
+    val tags = addTagsToRecordAndGet(recordId, tagIds)
+    val tagsAfterDel = Await.result(client.deleteTag(recordId, tags.head.id) flatMap { _ =>
+      client.getTags(recordId)
+    })
+    tagsAfterDel shouldBe tags.tail
+  }
+
+  it should "throw exception if tag or record not exists" in {
+    testExceptionWithFakeId(client.deleteTag)
   }
 
   "Method getTags" should "" in {
@@ -71,6 +67,27 @@ class ServerTest extends FlatSpec with BeforeAndAfterEach with Matchers {
 
   "Method getRecords" should "" in {
     //todo
+  }
+
+  def addTagsToRecordAndGet(recordId: Long, tagIds: Seq[Long]) = Await.result {
+    Future.collect(tagIds map (client.addTag(recordId, _))) flatMap { _ =>
+      client.getTags(recordId)
+    }
+  }
+
+  def testExceptionWithFakeId(fn: (Long, Long) => Future[Unit]): Unit = {
+    val Seq(existTag) = generateTags(1)
+    val Seq(existRecord) = generateRecords(1)
+    val fakeId = -1L
+    a[TagServiceException] shouldBe thrownBy {
+      Await.result(fn(fakeId, existTag))
+    }
+    a[TagServiceException] shouldBe thrownBy {
+      Await.result(fn(existRecord, fakeId))
+    }
+    a[TagServiceException] shouldBe thrownBy {
+      Await.result(fn(fakeId, fakeId))
+    }
   }
 
   def testGenerate[T](ids: Seq[Long]) = ids.length shouldBe ids.distinct.length
