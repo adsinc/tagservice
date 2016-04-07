@@ -61,6 +61,14 @@ class ServerTest extends FlatSpec with BeforeAndAfterEach with Matchers {
     testExceptionWithFakeId(client.deleteTag)
   }
 
+  it should "throw exception if tag not assigned to record" in {
+    val Seq(recordId) = generateRecords(1)
+    val Seq(tagId) = generateTags(1)
+    a[TagServiceException] shouldBe thrownBy {
+      Await.result(client.deleteTag(recordId, tagId))
+    }
+  }
+
   "Method getTags" should "" in {
     //todo
   }
